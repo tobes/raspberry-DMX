@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # http://www.jonshouse.co.uk/rpidmx512.cgi
 
-import SocketServer
-import socket
-
+from twisted.internet import protocol, reactor, endpoints
 
 from pigpio import pi, pulse as pig_pulse, OUTPUT
 
@@ -85,29 +83,16 @@ def send(values):
     pig.wave_send_once(wave)
 
 
+class Dmx(protocol.Protocol):
+
+    def dataReceived(self, data):
+        data = [int(data[i:i+2], 16) for i in range(0, len(data), 2)]
+        send(data)
 
 
+class DmxFactory(protocol.Factory):
+    def buildProtocol(self, addr):
+        return Dmx()
 
-class MyTCPHandler(SocketServer.BaseRequestHandler):
-    """
-    The RequestHandler class for our server.
-
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
-
-    def handle(self):
-        # self.request is the TCP socket connected to the client
-        while True:
-            data = self.request.recv(1024).strip()
-            if not data:
-                break
-            data = [int(data[i:i+2], 16) for i in range(0, len(data), 2)]
-            build(data)
-            print pulses
-            send(data)
-
-if __name__ == "__main__":
-    server = SocketServer.TCPServer((socket.gethostbyname(socket.gethostname()), PORT), MyTCPHandler)
-    server.serve_forever()
+endpoints.serverFromString(reactor, "tcp:%s" % PORT).listen(DmxFactory())
+reactor.run()
