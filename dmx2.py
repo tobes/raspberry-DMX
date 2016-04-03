@@ -73,14 +73,14 @@ def build_waveform(values):
     # clear pulses
     pulses = []
     # Break (low)
-    pulses += low(BREAK)
+    pulses.append(low(BREAK))
     # Mark after break (high)
-    pulses += high(MAB)
+    pulses.append(high(MAB))
     # Channel data
     for value in values:
         pulses += pulse_values[value]
     # End of data (leave high)
-    pulses += high(MTBP)
+    pulses.append(high(MTBP))
     return pulses
 
 
@@ -128,6 +128,5 @@ class DmxFactory(protocol.Factory):
         return Dmx()
 
 if __name__ == '__main__':
-    setup_gpio()
     endpoints.serverFromString(reactor, "tcp:%s" % PORT).listen(DmxFactory())
     reactor.run()
