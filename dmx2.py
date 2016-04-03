@@ -85,6 +85,16 @@ def send(values):
 
 class Dmx(protocol.Protocol):
 
+    def connectionMade(self):
+        print "Client Connected Detected!"
+        ### enable keepalive if supported
+        try:
+            self.transport.setTcpKeepAlive(1)
+        except AttributeError: pass
+
+    def connectionLost(self, reason):
+        print "Client Connection Lost!"
+
     def dataReceived(self, data):
         data = [int(data[i:i+2], 16) for i in range(0, len(data), 2)]
         send(data)
