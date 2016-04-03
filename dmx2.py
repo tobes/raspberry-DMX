@@ -109,5 +109,5 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
             send(data)
 
 if __name__ == "__main__":
-    server = SocketServer.TCPServer((socket.gethostname(), PORT), MyTCPHandler)
+    server = SocketServer.TCPServer((socket.gethostbyname(socket.gethostname()), PORT), MyTCPHandler)
     server.serve_forever()
