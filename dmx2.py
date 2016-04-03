@@ -64,7 +64,7 @@ def build(values):
     high(MTBP)
 
 
-def send(values):
+def setup_pig():
     pig = pi()
     # enable pins FIXME move out of Dmx
     pig.set_mode(PIN_RE, OUTPUT)
@@ -76,6 +76,7 @@ def send(values):
 
     pig.write(PIN_DI, 1)  # high is the rest state
 
+def send(values):
     pig.wave_clear()  # clear any existing waveforms
     build(values)
     pig.wave_add_generic(pulses)
@@ -104,5 +105,6 @@ class DmxFactory(protocol.Factory):
     def buildProtocol(self, addr):
         return Dmx()
 
+setup_pig()
 endpoints.serverFromString(reactor, "tcp:%s" % PORT).listen(DmxFactory())
 reactor.run()
