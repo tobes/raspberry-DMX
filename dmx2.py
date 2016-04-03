@@ -20,8 +20,8 @@ DI = 1 << PIN_DI
 
 # timings in µ seconds
 
-BREAK = 90
-MAB = 122
+BREAK = 88
+MAB = 8
 BIT = 4
 MTBP = 50  # Time between packets
 
