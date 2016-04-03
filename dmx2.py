@@ -85,8 +85,7 @@ def build_waveform(values):
 
 
 # set up gpio
-def setup_gpio():
-    global pig
+if True:
     pig = pi()
 
     pig.set_mode(PIN_RE, OUTPUT)
