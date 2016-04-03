@@ -64,17 +64,16 @@ def build(values):
     high(MTBP)
 
 
-def setup_pig():
-    pig = pi()
-    # enable pins FIXME move out of Dmx
-    pig.set_mode(PIN_RE, OUTPUT)
-    pig.set_mode(PIN_DE, OUTPUT)
-    pig.set_mode(PIN_DI, OUTPUT)
+pig = pi()
+# enable pins FIXME move out of Dmx
+pig.set_mode(PIN_RE, OUTPUT)
+pig.set_mode(PIN_DE, OUTPUT)
+pig.set_mode(PIN_DI, OUTPUT)
 
-    pig.write(PIN_RE, 0)  # disable Receive Enable
-    pig.write(PIN_DE, 1)  # enable Driver Enable
+pig.write(PIN_RE, 0)  # disable Receive Enable
+pig.write(PIN_DE, 1)  # enable Driver Enable
 
-    pig.write(PIN_DI, 1)  # high is the rest state
+pig.write(PIN_DI, 1)  # high is the rest state
 
 def send(values):
     pig.wave_clear()  # clear any existing waveforms
