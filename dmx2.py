@@ -31,54 +31,75 @@ pulses = []
 
 
 def high(duration=BIT):
-    pulses.append(pig_pulse(0, DI, duration))
+    return pig_pulse(0, DI, duration)
 
 
 def low(duration=BIT):
-    pulses.append(pig_pulse(DI, 0, duration))
+    return pig_pulse(DI, 0, duration)
 
 
-def channel(value):
+def create_value(value):
     # start (low for one bit)
-    low()
-    for bit in range(8):
-        if 1 << bit & value:
-            high()
-        else:
-            low()
+    # 8 data bits
     # stop (high for two bits)
-    high(BIT * 2)
+    out = []
+
+    def write_pulse():
+        if bits:
+            if current:
+                out.append(high(BIT * bits))
+            else:
+                out.append(low(BIT * bits))
+    value = value << 1 | 1536
+    bits = 0
+    current = None
+    for bit in range(11):
+        bit_value = bool(1 << bit & value)
+        if bit_value == current:
+            bits += 1
+            continue
+        write_pulse()
+        current = bit_value
+        bits = 1
+    write_pulse()
+    return out
+
+# precalculate pulses
+pulse_values = [create_value(x) for x in range(256)]
 
 
-def build(values):
+def build_waveform(values):
     # clear pulses
-    del pulses[:]
+    pulses = []
     # Break (low)
-    low(BREAK)
+    pulses += low(BREAK)
     # Mark after break (high)
-    high(MAB)
+    pulses += high(MAB)
     # Channel data
     for value in values:
-        channel(value)
+        pulses += pulse_values[value]
     # End of data (leave high)
-    high(MTBP)
+    pulses += high(MTBP)
+    return pulses
 
 
-pig = pi()
-# enable pins FIXME move out of Dmx
-pig.set_mode(PIN_RE, OUTPUT)
-pig.set_mode(PIN_DE, OUTPUT)
-pig.set_mode(PIN_DI, OUTPUT)
+# set up gpio
+def setup_gpio():
+    pig = pi()
 
-pig.write(PIN_RE, 0)  # disable Receive Enable
-pig.write(PIN_DE, 1)  # enable Driver Enable
+    pig.set_mode(PIN_RE, OUTPUT)
+    pig.set_mode(PIN_DE, OUTPUT)
+    pig.set_mode(PIN_DI, OUTPUT)
 
-pig.write(PIN_DI, 1)  # high is the rest state
+    pig.write(PIN_RE, 0)  # disable Receive Enable
+    pig.write(PIN_DE, 1)  # enable Driver Enable
+
+    pig.write(PIN_DI, 1)  # high is the rest state
+
 
 def send(values):
     pig.wave_clear()  # clear any existing waveforms
-    build(values)
-    pig.wave_add_generic(pulses)
+    pig.wave_add_generic(build_waveform(values))
     wave = pig.wave_create()
     pig.wave_send_once(wave)
 
@@ -87,16 +108,17 @@ class Dmx(protocol.Protocol):
 
     def connectionMade(self):
         print "Client Connected Detected!"
-        ### enable keepalive if supported
+        # enable keepalive if supported
         try:
             self.transport.setTcpKeepAlive(1)
-        except AttributeError: pass
+        except AttributeError:
+            pass
 
     def connectionLost(self, reason):
         print "Client Connection Lost!"
 
     def dataReceived(self, data):
-        data = [int(data[i:i+2], 16) for i in range(0, len(data), 2)]
+        data = [int(data[i:i + 2], 16) for i in range(0, len(data), 2)]
         send(data)
 
 
@@ -104,6 +126,7 @@ class DmxFactory(protocol.Factory):
     def buildProtocol(self, addr):
         return Dmx()
 
-setup_pig()
-endpoints.serverFromString(reactor, "tcp:%s" % PORT).listen(DmxFactory())
-reactor.run()
+if __name__ == '__main__':
+    setup_pig()
+    endpoints.serverFromString(reactor, "tcp:%s" % PORT).listen(DmxFactory())
+    reactor.run()
