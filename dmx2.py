@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 # http://www.jonshouse.co.uk/rpidmx512.cgi
 
-from threading import Thread
-from time import sleep
+import SocketServer
+import socket
+
 
 from pigpio import pi, pulse as pig_pulse, OUTPUT
+
+
+PORT = 50007
 
 # pins
 
@@ -27,6 +31,7 @@ SLEEP_TIME = 5
 
 pulses = []
 
+
 def high(duration=BIT):
     pulses.append(pig_pulse(0, DI, duration))
 
@@ -35,7 +40,7 @@ def low(duration=BIT):
     pulses.append(pig_pulse(DI, 0, duration))
 
 
-def channel(value)
+def channel(value):
     # start (low for one bit)
     low()
     for bit in range(8):
@@ -74,12 +79,35 @@ def send(values):
     pig.write(PIN_DI, 1)  # high is the rest state
 
     pig.wave_clear()  # clear any existing waveforms
-    pig.wave_add_generic(build(values))
+    build(values)
+    pig.wave_add_generic(pulses)
     wave = pig.wave_create()
- #   pig.write(PIN_DE, 0)  # enable Driver Enable
     pig.wave_send_once(wave)
-  #  pig.write(PIN_DE, 1)  # disable Driver Enable
 
 
-if __name__ == '__main__':
-    send([0, 255, 0, 0, 0, 0, 0])
+
+
+
+class MyTCPHandler(SocketServer.BaseRequestHandler):
+    """
+    The RequestHandler class for our server.
+
+    It is instantiated once per connection to the server, and must
+    override the handle() method to implement communication to the
+    client.
+    """
+
+    def handle(self):
+        # self.request is the TCP socket connected to the client
+        while True:
+            data = self.request.recv(1024).strip()
+            if not data:
+                break
+            data = [int(data[i:i+2], 16) for i in range(0, len(data), 2)]
+            build(data)
+            print pulses
+            send(data)
+
+if __name__ == "__main__":
+    server = SocketServer.TCPServer((socket.gethostname(), PORT), MyTCPHandler)
+    server.serve_forever()
