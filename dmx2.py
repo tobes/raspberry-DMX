@@ -28,6 +28,7 @@ MTBP = 50  # Time between packets
 SLEEP_TIME = 5
 
 pulses = []
+pig = None
 
 
 def high(duration=BIT):
@@ -85,6 +86,7 @@ def build_waveform(values):
 
 # set up gpio
 def setup_gpio():
+    global pig
     pig = pi()
 
     pig.set_mode(PIN_RE, OUTPUT)
@@ -127,6 +129,6 @@ class DmxFactory(protocol.Factory):
         return Dmx()
 
 if __name__ == '__main__':
-    setup_pig()
+    setup_gpio()
     endpoints.serverFromString(reactor, "tcp:%s" % PORT).listen(DmxFactory())
     reactor.run()
