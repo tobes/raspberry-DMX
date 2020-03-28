@@ -125,9 +125,12 @@ class DMX:
 
 if __name__ == '__main__':
     d = DMX()
-    d.set(0,255)
-    d.set(1,255)
-    d.set(2,255)
-    d.set(3,255)
-    d.send()
+    while True:
+        data = raw_input('> ')
+        if data:
+            if data[0].lower() == 'q':
+                break
+            c, v = data.split()
+            d.set(int(c), int(v))
+        d.send()
 
