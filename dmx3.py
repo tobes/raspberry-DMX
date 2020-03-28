@@ -112,9 +112,9 @@ class DMX:
         waveform = self.build_waveform()
         if self.pig:
             self.pig.wave_clear()  # clear any existing waveforms
-            self.pig.wave_add_generic()
+            self.pig.wave_add_generic(waveform)
             wave = self.pig.wave_create()
-            self.pig.wave_send_once(waveform)
+            self.pig.wave_send_once(wave)
         else:
             print(self.channel_values)
 
