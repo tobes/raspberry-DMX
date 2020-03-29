@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from time import sleep
 
 try:
     from pigpio import pi, pulse as pig_pulse, OUTPUT
@@ -123,14 +124,66 @@ class DMX:
             self.channel_values.append(0)
         self.channel_values[channel] = value
 
+
+class PAR:
+
+    def __init__(self, dmx, channel):
+        self.dmx = dmx
+        self.channel = channel
+        self.brightness = 255
+        self.red = 0
+        self.green = 0
+        self.blue = 0
+        self.hex = '#000'
+
+    def color(self, value):
+        if value[0] == '#':
+            if len(value) == 4:
+                red = int(value[1], 16) * 17
+                green = int(value[2], 16) * 17
+                blue = int(value[3], 16) * 17
+            if len(value) == 7:
+                red = int(value[1: 3], 16)
+                green = int(value[3: 5], 16)
+                blue = int(value[5: 7], 16)
+        self.red = red
+        self.green = green
+        self.blue = blue
+        self.hex = '#%02X%02X%02X' % (red, green, blue)
+        self.output()
+
+    def output(self):
+        self.dmx.set(self.channel, self.brightness)
+        self.dmx.set(self.channel + 1, self.red)
+        self.dmx.set(self.channel + 2, self.green)
+        self.dmx.set(self.channel + 3, self.blue)
+        self.dmx.send()
+
+
+def sequence(p):
+
+    values = ['#F0F', '#FF0']
+    index = 0
+    while True:
+        p.color(values[index])
+        print p.hex
+        index += 1
+        if index >= len(values):
+            index = 0
+        sleep(1)
+
 if __name__ == '__main__':
     d = DMX()
-    while True:
-        data = raw_input('> ')
-        if data:
-            if data[0].lower() == 'q':
-                break
-            c, v = data.split()
-            d.set(int(c), int(v))
-        d.send()
+    d.send()
+    p = PAR(d, 0)
+    sequence(p)
+
+#    while True:
+#        data = raw_input('> ')
+#        if data:
+#            if data[0].lower() == 'q':
+#                break
+#            c, v = data.split()
+#            d.set(int(c), int(v))
+#        d.send()
 
