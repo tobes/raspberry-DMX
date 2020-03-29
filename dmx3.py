@@ -173,7 +173,7 @@ def color_to_rgb(value):
 
 def sequence(p):
 
-    values = ['#F0F', '#FF0']
+    values = ['#F00', '#00F']
     index = 0
     while True:
         p.color(values[index])
@@ -185,25 +185,46 @@ def sequence(p):
 
 def fade(p):
 
-    values = ['#F0F', '#FF0']
+    def fade_value(v0, v1, steps, step, wrap=False):
+        d = (v0 - v1)
+        if wrap:
+            if d > 0.5:
+                d = 1 - d
+            if d < -0.5:
+                d = -(1 + d)
+            value = v0 + (d / (steps - 1)) * step
+            if value < 0:
+                value += 1
+            elif value > 1:
+                value -= 1
+        else:
+            value = v0 + (d / (steps - 1)) * step
+        #print step, d, '@@', v0, v1, value
+        return value
+
+    values = ['#00F', '#F00', '#00F']
     v0 = colorsys.rgb_to_hls(*color_to_rgb(values[0]))
     v1 = colorsys.rgb_to_hls(*color_to_rgb(values[1]))
     step = 0
     direction = 1
-    bounce = False
-    steps = 5
+    bounce = True
+    steps = 10
     while True:
-        h = v0[0] + ((v0[0] - v1[0]) / (steps - 1)) * step
-        l = v0[1] + ((v0[1] - v1[1]) / (steps - 1)) * step
-        s = v0[2] + ((v0[2] - v1[2]) / (steps - 1)) * step
+        h = fade_value(v0[0], v1[0], steps, step, True)
+        l = fade_value(v0[1], v1[1], steps, step)
+        s = fade_value(v0[2], v1[2], steps, step)
         rgb = colorsys.hls_to_rgb(h, l, s)
         p.color(rgb)
-        print  rgb
+        print p.hex
         step += direction
-        if step < 0:
-            step = steps
-        if step >= steps:
-            step = 0
+        if bounce:
+            if step <=0 or step >= steps -1:
+                direction = - direction
+        else:
+            if step < 0:
+                step = steps
+            if step >= steps:
+                step = 0
         sleep(1)
 
 
