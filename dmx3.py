@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from time import sleep
+import colorsys
 
 try:
     from pigpio import pi, pulse as pig_pulse, OUTPUT
@@ -116,6 +117,7 @@ class DMX:
             self.pig.wave_add_generic(waveform)
             wave = self.pig.wave_create()
             self.pig.wave_send_once(wave)
+            print(self.channel_values)
         else:
             print(self.channel_values)
 
@@ -137,15 +139,7 @@ class PAR:
         self.hex = '#000'
 
     def color(self, value):
-        if value[0] == '#':
-            if len(value) == 4:
-                red = int(value[1], 16) * 17
-                green = int(value[2], 16) * 17
-                blue = int(value[3], 16) * 17
-            if len(value) == 7:
-                red = int(value[1: 3], 16)
-                green = int(value[3: 5], 16)
-                blue = int(value[5: 7], 16)
+        red, green, blue = color_to_rgb(value)
         self.red = red
         self.green = green
         self.blue = blue
@@ -160,6 +154,23 @@ class PAR:
         self.dmx.send()
 
 
+def color_to_rgb(value):
+    if value[0] == '#':
+        if len(value) == 4:
+            red = int(value[1], 16) * 17
+            green = int(value[2], 16) * 17
+            blue = int(value[3], 16) * 17
+        if len(value) == 7:
+            red = int(value[1: 3], 16)
+            green = int(value[3: 5], 16)
+            blue = int(value[5: 7], 16)
+    if isinstance(value, tuple):
+        red = int(value[0])
+        green = int(value[1])
+        blue = int(value[2])
+    return red, green, blue
+
+
 def sequence(p):
 
     values = ['#F0F', '#FF0']
@@ -172,11 +183,36 @@ def sequence(p):
             index = 0
         sleep(1)
 
+def fade(p):
+
+    values = ['#F0F', '#FF0']
+    v0 = colorsys.rgb_to_hls(*color_to_rgb(values[0]))
+    v1 = colorsys.rgb_to_hls(*color_to_rgb(values[1]))
+    step = 0
+    direction = 1
+    bounce = False
+    steps = 5
+    while True:
+        h = v0[0] + ((v0[0] - v1[0]) / (steps - 1)) * step
+        l = v0[1] + ((v0[1] - v1[1]) / (steps - 1)) * step
+        s = v0[2] + ((v0[2] - v1[2]) / (steps - 1)) * step
+        rgb = colorsys.hls_to_rgb(h, l, s)
+        p.color(rgb)
+        print  rgb
+        step += direction
+        if step < 0:
+            step = steps
+        if step >= steps:
+            step = 0
+        sleep(1)
+
+
+
 if __name__ == '__main__':
     d = DMX()
     d.send()
     p = PAR(d, 0)
-    sequence(p)
+    fade(p)
 
 #    while True:
 #        data = raw_input('> ')
